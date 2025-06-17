@@ -1,12 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_file_upload",
+      "Bash(pnpx vercel:*)",
+      "Bash(pnpm build:*)"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "playwright",
     "shell-commands"
-  ],
-  "permissions": {
-    "allow": [
-      "mcp__playwright__browser_file_upload"
-    ]
-  }
+  ]
 }
