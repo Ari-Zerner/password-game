@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, RotateCcw, Upload, X } from "lucide-react";
+import { Lock, RotateCcw, Upload, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
@@ -12,6 +12,7 @@ function HomePage() {
   const [guesses, setGuesses] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartGame = () => {
@@ -70,19 +71,30 @@ function HomePage() {
           <h1 className="text-center mb-6">Password Guessing Game</h1>
           
           {/* Instructions Panel */}
-          <div className="alert alert-info mb-6">
+          <div className="mb-6">
             <div className="not-prose">
-              <h3 className="font-semibold text-lg mb-2">How to Play:</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Enter any password you want others to guess</li>
-                <li>Optionally upload an image that will be revealed as the password is guessed</li>
-                <li>The password will be hidden and replaced with empty boxes</li>
-                <li>Guess each character one by one in the boxes</li>
-                <li>Correct guesses turn green, incorrect ones turn red</li>
-                <li>Each correct guess makes the image clearer (if uploaded)</li>
-                <li>Guessing is case-insensitive (A = a)</li>
-                <li>Complete all characters to win and fully reveal the image!</li>
-              </ul>
+              <button 
+                onClick={() => setShowInstructions(!showInstructions)}
+                className="btn btn-ghost btn-sm w-full justify-between"
+              >
+                <span className="font-semibold">How to Play</span>
+                {showInstructions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              
+              {showInstructions && (
+                <div className="alert alert-info mt-2">
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Enter any password you want others to guess</li>
+                    <li>Optionally upload an image that will be revealed as the password is guessed</li>
+                    <li>The password will be hidden and replaced with empty boxes</li>
+                    <li>Guess each character one by one in the boxes</li>
+                    <li>Correct guesses turn green, incorrect ones turn red</li>
+                    <li>Each correct guess makes the image clearer (if uploaded)</li>
+                    <li>Guessing is case-insensitive (A = a)</li>
+                    <li>Complete all characters to win and fully reveal the image!</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
@@ -235,22 +247,6 @@ function PasswordGuessGame({
                 transition: 'filter 0.5s ease-in-out'
               }}
             />
-            {/* Noise overlay for additional obscuring effect */}
-            <div 
-              className="absolute inset-0 rounded-lg pointer-events-none"
-              style={{
-                background: `
-                  radial-gradient(circle at 20% 50%, transparent 20%, rgba(0,0,0,${0.8 - (imageClarity * 0.8)}) 21%, rgba(0,0,0,${0.8 - (imageClarity * 0.8)}) 40%, transparent 41%),
-                  radial-gradient(circle at 80% 50%, transparent 20%, rgba(0,0,0,${0.6 - (imageClarity * 0.6)}) 21%, rgba(0,0,0,${0.6 - (imageClarity * 0.6)}) 40%, transparent 41%),
-                  radial-gradient(circle at 40% 40%, transparent 20%, rgba(0,0,0,${0.4 - (imageClarity * 0.4)}) 21%, rgba(0,0,0,${0.4 - (imageClarity * 0.4)}) 40%, transparent 41%),
-                  linear-gradient(90deg, transparent, rgba(0,0,0,${0.3 - (imageClarity * 0.3)}), transparent)
-                `,
-                transition: 'background 0.5s ease-in-out'
-              }}
-            />
-          </div>
-          <div className="mt-2 text-sm text-base-content/70">
-            Image clarity: {Math.round(imageClarity * 100)}%
           </div>
         </div>
       )}
