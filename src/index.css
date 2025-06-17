@@ -2,40 +2,77 @@
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
-/* Custom styling for a more attractive look */
+/* Sexy and dangerous color scheme - black, red, purple */
 body {
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a0a1a 25%, #2d0015 50%, #1a0a1a 75%, #000000 100%);
   min-height: 100vh;
+  color: #ffffff;
 }
 
-/* Add subtle animations */
+/* Sexy and dangerous styling */
 .card {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(220, 20, 60, 0.3);
   transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(139, 69, 19, 0.2);
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.1);
+  box-shadow: 0 20px 40px rgba(220, 20, 60, 0.3);
+  border-color: rgba(128, 0, 128, 0.5);
 }
 
 .input:focus {
-  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.3);
-  border-color: #ff6b9d;
+  box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.4);
+  border-color: #dc143c;
+  background: rgba(139, 69, 19, 0.1);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  background: linear-gradient(135deg, #dc143c 0%, #800080 50%, #8b0000 100%);
   border: none;
   transition: all 0.3s ease;
+  color: #ffffff;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(255, 107, 157, 0.3);
+  box-shadow: 0 10px 25px rgba(220, 20, 60, 0.4);
+  background: linear-gradient(135deg, #ff1744 0%, #9c27b0 50%, #b71c1c 100%);
+}
+
+.btn-outline {
+  border-color: rgba(220, 20, 60, 0.6);
+  color: #dc143c;
+}
+
+.btn-outline:hover {
+  background: rgba(220, 20, 60, 0.1);
+  border-color: #dc143c;
+  color: #ffffff;
+}
+
+/* Input character boxes */
+.input-success {
+  background: rgba(139, 69, 19, 0.3) !important;
+  border-color: #dc143c !important;
+  color: #ffffff !important;
+}
+
+.input-error {
+  background: rgba(128, 0, 128, 0.3) !important;
+  border-color: #800080 !important;
+  color: #ffffff !important;
+}
+
+/* Badge styling */
+.badge-primary {
+  background: linear-gradient(135deg, #dc143c 0%, #800080 100%);
+  color: #ffffff;
+  border: none;
 }
 
 /* Security measures for image canvas */

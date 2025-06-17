@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, RotateCcw, Upload, X, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { Lock, RotateCcw, Upload, X, Download } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
@@ -12,7 +12,6 @@ function HomePage() {
   const [guesses, setGuesses] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -159,33 +158,6 @@ function HomePage() {
           
           <h1 className="text-center mb-6">Interrogame</h1>
           
-          {/* Instructions Panel */}
-          <div className="mb-6">
-            <div className="not-prose">
-              <button 
-                onClick={() => setShowInstructions(!showInstructions)}
-                className="btn btn-ghost btn-sm w-full justify-between"
-              >
-                <span className="font-semibold">How to Play</span>
-                {showInstructions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-              
-              {showInstructions && (
-                <div className="alert alert-info mt-2">
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Enter any password you want others to guess</li>
-                    <li>Optionally upload an image that will be revealed as the password is guessed</li>
-                    <li>The password will be hidden and replaced with empty boxes</li>
-                    <li>Guess each character one by one in the boxes</li>
-                    <li>Correct guesses turn green, incorrect ones turn red</li>
-                    <li>Each correct guess makes the image clearer (if uploaded)</li>
-                    <li>Guessing is case-insensitive (A = a)</li>
-                    <li>Complete all characters to win and fully reveal the image!</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
 
           {!gameStarted ? (
             <div className="space-y-6">
@@ -401,8 +373,8 @@ function PasswordGuessGame({
                 <Download className="w-4 h-4 mr-2" />
                 Download Image
               </button>
-              <div className="text-sm text-success mt-2">
-                🎉 Image fully revealed! You can now right-click to save or use the download button.
+              <div className="text-sm text-red-400 mt-2">
+                Target acquired. Right-click to extract or download.
               </div>
             </div>
           )}
@@ -435,15 +407,6 @@ function PasswordGuessGame({
         ))}
       </div>
 
-      {isComplete && (
-        <div className="not-prose text-center">
-          <div className="alert alert-success">
-            <span className="text-lg font-semibold">
-              🎉 Congratulations! You guessed the password{imagePreview ? ' and revealed the image' : ''}!
-            </span>
-          </div>
-        </div>
-      )}
 
       <div className="not-prose text-center">
         <button 
