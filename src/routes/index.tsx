@@ -1,76 +1,173 @@
-import { SignInButton } from "@clerk/clerk-react";
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Authenticated, Unauthenticated } from "convex/react";
-import { Zap } from "lucide-react";
-import { api } from "../../convex/_generated/api";
-
-const usersQueryOptions = convexQuery(api.users.listUsers, {});
+import { Lock, RotateCcw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
-  loader: async ({ context: { queryClient } }) =>
-    await queryClient.ensureQueryData(usersQueryOptions),
   component: HomePage,
 });
 
 function HomePage() {
+  const [password, setPassword] = useState("");
+  const [gameStarted, setGameStarted] = useState(false);
+  const [guesses, setGuesses] = useState<string[]>([]);
+
+  const handleStartGame = () => {
+    if (password.trim().length === 0) return;
+    setGameStarted(true);
+    setGuesses(new Array(password.length).fill(""));
+  };
+
+  const handleReset = () => {
+    setPassword("");
+    setGameStarted(false);
+    setGuesses([]);
+  };
+
+  const handleGuessChange = (index: number, value: string) => {
+    if (value.length > 1) return; // Only allow single character
+    const newGuesses = [...guesses];
+    newGuesses[index] = value.toLowerCase();
+    setGuesses(newGuesses);
+  };
+
+  const isCorrectGuess = (index: number) => {
+    return guesses[index].toLowerCase() === password[index].toLowerCase();
+  };
+
   return (
-    <div className="text-center">
-      <div className="not-prose flex justify-center mb-4">
-        <Zap className="w-16 h-16 text-primary" />
-      </div>
-      <h1>Fullstack Vibe Coding</h1>
+    <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
+      <div className="card bg-base-100 shadow-xl w-full max-w-2xl">
+        <div className="card-body">
+          <div className="not-prose flex justify-center mb-4">
+            <Lock className="w-12 h-12 text-primary" />
+          </div>
+          
+          <h1 className="text-center mb-8">Password Guessing Game</h1>
 
-      <Unauthenticated>
-        <p>Sign in to see the list of users.</p>
-        <div className="not-prose mt-4">
-          <SignInButton mode="modal">
-            <button className="btn btn-primary btn-lg">Get Started</button>
-          </SignInButton>
+          {!gameStarted ? (
+            <div className="space-y-6">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-lg font-medium">Enter a password to hide:</span>
+                </label>
+                <input 
+                  type="password"
+                  placeholder="Type your password here..."
+                  className="input input-bordered input-lg text-center"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleStartGame()}
+                />
+              </div>
+              
+              <div className="not-prose">
+                <button 
+                  className="btn btn-primary btn-lg w-full"
+                  onClick={handleStartGame}
+                  disabled={password.trim().length === 0}
+                >
+                  Start Game
+                </button>
+              </div>
+            </div>
+          ) : (
+            <PasswordGuessGame 
+              password={password}
+              guesses={guesses}
+              onGuessChange={handleGuessChange}
+              isCorrectGuess={isCorrectGuess}
+              onReset={handleReset}
+            />
+          )}
         </div>
-      </Unauthenticated>
-
-      <Authenticated>
-        <UsersList />
-      </Authenticated>
+      </div>
     </div>
   );
 }
 
-function UsersList() {
-  const { data: users } = useSuspenseQuery(usersQueryOptions);
+interface PasswordGuessGameProps {
+  password: string;
+  guesses: string[];
+  onGuessChange: (index: number, value: string) => void;
+  isCorrectGuess: (index: number) => boolean;
+  onReset: () => void;
+}
+
+function PasswordGuessGame({ 
+  password, 
+  guesses, 
+  onGuessChange, 
+  isCorrectGuess, 
+  onReset 
+}: PasswordGuessGameProps) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    inputRefs.current = inputRefs.current.slice(0, password.length);
+  }, [password.length]);
+
+  const handleInputChange = (index: number, value: string) => {
+    onGuessChange(index, value);
+    
+    // Auto-focus next input if current is filled
+    if (value && index < password.length - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    // Handle backspace to move to previous input
+    if (e.key === 'Backspace' && !guesses[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const correctGuesses = guesses.filter((_, index) => isCorrectGuess(index)).length;
+  const isComplete = correctGuesses === password.length;
 
   return (
-    <>
-      <h2>Users</h2>
+    <div className="space-y-8">
+      <div className="text-center">
+        <p className="text-lg mb-2">Guess the password character by character:</p>
+        <div className="badge badge-primary badge-lg">
+          {correctGuesses} / {password.length} correct
+        </div>
+      </div>
 
-      {users.length === 0 ? (
-        <div className="not-prose">
-          <div className="p-8 bg-base-200 rounded-lg">
-            <p className="opacity-70">No users yet. You're the first!</p>
+      <div className="not-prose flex flex-wrap justify-center gap-2 max-w-full">
+        {password.split('').map((_, index) => (
+          <input
+            key={index}
+            ref={(el) => (inputRefs.current[index] = el)}
+            type="text"
+            className={`input input-bordered w-12 h-12 text-center text-xl font-mono ${
+              guesses[index] ? (isCorrectGuess(index) ? 'input-success bg-success/20' : 'input-error') : ''
+            }`}
+            value={guesses[index]}
+            onChange={(e) => handleInputChange(index, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            maxLength={1}
+          />
+        ))}
+      </div>
+
+      {isComplete && (
+        <div className="not-prose text-center">
+          <div className="alert alert-success">
+            <span className="text-lg font-semibold">🎉 Congratulations! You guessed the password!</span>
           </div>
         </div>
-      ) : (
-        <div className="not-prose overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user._id}>
-                  <td>{user.name}</td>
-                  <td>{new Date(user._creationTime).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       )}
-    </>
+
+      <div className="not-prose text-center">
+        <button 
+          className="btn btn-outline btn-lg"
+          onClick={onReset}
+        >
+          <RotateCcw className="w-5 h-5 mr-2" />
+          New Game
+        </button>
+      </div>
+    </div>
   );
 }
