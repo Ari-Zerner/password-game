@@ -152,11 +152,15 @@ function HomePage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="card shadow-xl w-full max-w-2xl">
         <div className="card-body">
-          <div className="not-prose flex justify-center mb-4">
-            <Lock className="w-12 h-12 text-primary" />
-          </div>
-          
-          <h1 className="text-center mb-6">Interrogame</h1>
+          {!gameStarted && (
+            <>
+              <div className="not-prose flex justify-center mb-4">
+                <Lock className="w-12 h-12 text-primary" />
+              </div>
+              
+              <h1 className="text-center mb-6">Interrogame</h1>
+            </>
+          )}
           
 
           {!gameStarted ? (
@@ -331,6 +335,15 @@ function PasswordGuessGame({
     // Handle backspace to move to previous input
     if (e.key === 'Backspace' && !guesses[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
+    }
+    
+    // Handle arrow key navigation
+    if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault();
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < password.length - 1) {
+      e.preventDefault();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
