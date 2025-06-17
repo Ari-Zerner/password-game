@@ -157,7 +157,7 @@ function HomePage() {
             <Lock className="w-12 h-12 text-primary" />
           </div>
           
-          <h1 className="text-center mb-6">Password Guessing Game</h1>
+          <h1 className="text-center mb-6">Interrogame</h1>
           
           {/* Instructions Panel */}
           <div className="mb-6">
@@ -368,7 +368,8 @@ function PasswordGuessGame({
       {/* Image reveal section */}
       {imagePreview && (
         <div className="text-center">
-          <div className="relative inline-block max-w-2xl">
+          {/* Canvas container - always centered */}
+          <div className="flex justify-center mb-4">
             <canvas 
               ref={canvasRef}
               className="rounded-lg border border-base-300 max-h-96"
@@ -388,23 +389,23 @@ function PasswordGuessGame({
               onDragStart={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow drag when revealed
               onSelectStart={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow selection when revealed
             />
-            
-            {/* Download button when fully revealed */}
-            {imageClarity === 1 && (
-              <div className="mt-4 not-prose">
-                <button 
-                  onClick={handleDownloadImage}
-                  className="btn btn-primary btn-sm"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Image
-                </button>
-                <div className="text-sm text-success mt-2">
-                  🎉 Image fully revealed! You can now right-click to save or use the download button.
-                </div>
-              </div>
-            )}
           </div>
+          
+          {/* Download button when fully revealed - separate from canvas */}
+          {imageClarity === 1 && (
+            <div className="not-prose">
+              <button 
+                onClick={handleDownloadImage}
+                className="btn btn-primary btn-sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Image
+              </button>
+              <div className="text-sm text-success mt-2">
+                🎉 Image fully revealed! You can now right-click to save or use the download button.
+              </div>
+            </div>
+          )}
         </div>
       )}
 
