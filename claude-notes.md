@@ -39,6 +39,7 @@ Created a simple web app for a password guessing game with the following functio
 
 ### Commits Made During Session
 - Initial implementation of password guessing game functionality
+- Made password input plaintext and changed branding to "Password Game"
 
 ### Testing Completed
 - Manual browser testing verified all functionality works correctly

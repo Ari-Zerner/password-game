@@ -51,7 +51,7 @@ function HomePage() {
                   <span className="label-text text-lg font-medium">Enter a password to hide:</span>
                 </label>
                 <input 
-                  type="password"
+                  type="text"
                   placeholder="Type your password here..."
                   className="input input-bordered input-lg text-center"
                   value={password}
