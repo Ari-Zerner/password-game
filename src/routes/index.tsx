@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, RotateCcw, Upload, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Lock, RotateCcw, Upload, X, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
@@ -42,9 +42,9 @@ function HomePage() {
 
     const img = new Image();
     img.onload = () => {
-      // Set canvas size to match image aspect ratio
-      const maxWidth = 400;
-      const maxHeight = 300;
+      // Set canvas size to match image aspect ratio (larger display)
+      const maxWidth = 600;
+      const maxHeight = 450;
       const aspectRatio = img.width / img.height;
       
       let canvasWidth = maxWidth;
@@ -88,13 +88,21 @@ function HomePage() {
         const noiseIntensity = 1 - clarity;
         const seed = Math.floor(clarity * 100); // Use clarity as seed for deterministic pattern
         
-        for (let x = 0; x < canvasWidth; x += 4) {
-          for (let y = 0; y < canvasHeight; y += 4) {
-            // Deterministic pseudo-random based on position and seed
-            const pseudoRandom = ((x * 7 + y * 13 + seed * 17) % 100) / 100;
-            if (pseudoRandom < noiseIntensity * 0.3) {
-              ctx.fillStyle = `rgba(0, 0, 0, ${noiseIntensity * 0.8})`;
-              ctx.fillRect(x, y, 2, 2);
+        // Better PRNG to avoid regular patterns
+        const prng = (x: number, y: number, s: number) => {
+          let hash = x * 374761393 + y * 668265263 + s * 1274126177;
+          hash = (hash ^ (hash >>> 13)) * 1274126177;
+          return ((hash ^ (hash >>> 16)) >>> 0) / 4294967296;
+        };
+        
+        for (let x = 0; x < canvasWidth; x += 2) {
+          for (let y = 0; y < canvasHeight; y += 2) {
+            const random = prng(x, y, seed);
+            if (random < noiseIntensity * 0.25) {
+              const size = Math.floor(random * 3) + 1;
+              const alpha = noiseIntensity * (0.4 + random * 0.4);
+              ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+              ctx.fillRect(x, y, size, size);
             }
           }
         }
@@ -289,6 +297,15 @@ function PasswordGuessGame({
   const isComplete = correctGuesses === password.length;
   const imageClarity = password.length > 0 ? correctGuesses / password.length : 0;
 
+  const handleDownloadImage = () => {
+    if (canvasRef.current && imageClarity === 1) {
+      const link = document.createElement('a');
+      link.download = 'revealed-image.png';
+      link.href = canvasRef.current.toDataURL();
+      link.click();
+    }
+  };
+
   useEffect(() => {
     inputRefs.current = inputRefs.current.slice(0, password.length);
   }, [password.length]);
@@ -299,8 +316,8 @@ function PasswordGuessGame({
       renderSecureImage(canvasRef.current, imagePreview, imageClarity);
       
       // Override toDataURL and toBlob methods until fully revealed
+      const canvas = canvasRef.current;
       if (imageClarity < 1) {
-        const canvas = canvasRef.current;
         const originalToDataURL = canvas.toDataURL.bind(canvas);
         const originalToBlob = canvas.toBlob.bind(canvas);
         
@@ -314,10 +331,16 @@ function PasswordGuessGame({
           if (callback) callback(null);
         };
         
+        // Store original methods for restoration
+        (canvas as any)._originalToDataURL = originalToDataURL;
+        (canvas as any)._originalToBlob = originalToBlob;
+      } else {
         // Restore original methods when fully revealed
-        if (imageClarity === 1) {
-          canvas.toDataURL = originalToDataURL;
-          canvas.toBlob = originalToBlob;
+        if ((canvas as any)._originalToDataURL) {
+          canvas.toDataURL = (canvas as any)._originalToDataURL;
+          canvas.toBlob = (canvas as any)._originalToBlob;
+          delete (canvas as any)._originalToDataURL;
+          delete (canvas as any)._originalToBlob;
         }
       }
     }
@@ -345,25 +368,42 @@ function PasswordGuessGame({
       {/* Image reveal section */}
       {imagePreview && (
         <div className="text-center">
-          <div className="relative inline-block max-w-md">
+          <div className="relative inline-block max-w-2xl">
             <canvas 
               ref={canvasRef}
-              className="rounded-lg border border-base-300 max-h-64"
+              className="rounded-lg border border-base-300 max-h-96"
               data-secure={imageClarity < 1 ? "true" : undefined}
               style={{
                 transition: 'opacity 0.5s ease-in-out',
                 maxWidth: '100%',
                 height: 'auto',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                MozUserSelect: 'none',
-                msUserSelect: 'none',
-                pointerEvents: imageClarity < 1 ? 'none' : 'auto' // Disable interactions until fully revealed
+                userSelect: imageClarity < 1 ? 'none' : 'auto',
+                WebkitUserSelect: imageClarity < 1 ? 'none' : 'auto',
+                MozUserSelect: imageClarity < 1 ? 'none' : 'auto',
+                msUserSelect: imageClarity < 1 ? 'none' : 'auto',
+                pointerEvents: imageClarity < 1 ? 'none' : 'auto', // Enable interactions when fully revealed
+                cursor: imageClarity < 1 ? 'not-allowed' : 'auto'
               }}
-              onContextMenu={(e) => e.preventDefault()} // Prevent right-click save
-              onDragStart={(e) => e.preventDefault()} // Prevent drag and drop
-              onSelectStart={(e) => e.preventDefault()} // Prevent text selection
+              onContextMenu={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow right-click when revealed
+              onDragStart={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow drag when revealed
+              onSelectStart={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow selection when revealed
             />
+            
+            {/* Download button when fully revealed */}
+            {imageClarity === 1 && (
+              <div className="mt-4 not-prose">
+                <button 
+                  onClick={handleDownloadImage}
+                  className="btn btn-primary btn-sm"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Image
+                </button>
+                <div className="text-sm text-success mt-2">
+                  🎉 Image fully revealed! You can now right-click to save or use the download button.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
