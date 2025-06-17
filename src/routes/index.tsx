@@ -35,14 +35,29 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
-      <div className="card bg-base-100 shadow-xl w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="card shadow-xl w-full max-w-2xl">
         <div className="card-body">
           <div className="not-prose flex justify-center mb-4">
             <Lock className="w-12 h-12 text-primary" />
           </div>
           
-          <h1 className="text-center mb-8">Password Guessing Game</h1>
+          <h1 className="text-center mb-6">Password Guessing Game</h1>
+          
+          {/* Instructions Panel */}
+          <div className="alert alert-info mb-6">
+            <div className="not-prose">
+              <h3 className="font-semibold text-lg mb-2">How to Play:</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Enter any password you want others to guess</li>
+                <li>The password will be hidden and replaced with empty boxes</li>
+                <li>Guess each character one by one in the boxes</li>
+                <li>Correct guesses turn green, incorrect ones turn red</li>
+                <li>Guessing is case-insensitive (A = a)</li>
+                <li>Complete all characters to win!</li>
+              </ul>
+            </div>
+          </div>
 
           {!gameStarted ? (
             <div className="space-y-6">

@@ -41,6 +41,8 @@ Created a simple web app for a password guessing game with the following functio
 - Initial implementation of password guessing game functionality
 - Made password input plaintext and changed branding to "Password Game"
 - Removed all authentication UI and router devtools - clean interface with only game functionality
+- Added instruction panel and updated to sexy dark gradient color scheme with pink/purple accents
+- Updated README to describe the password game project instead of template boilerplate
 
 ### Testing Completed
 - Manual browser testing verified all functionality works correctly

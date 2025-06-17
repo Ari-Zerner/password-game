@@ -1,12 +1,66 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
-  themes:
-    light --default,
-    dark --prefersdark;
+  themes: [
+    {
+      sexytheme: {
+        "primary": "#ff6b9d",
+        "primary-content": "#ffffff",
+        "secondary": "#c44569", 
+        "secondary-content": "#ffffff",
+        "accent": "#f8b500",
+        "accent-content": "#000000",
+        "neutral": "#2a2a2a",
+        "neutral-content": "#ffffff",
+        "base-100": "#1a1a2e",
+        "base-200": "#16213e",
+        "base-300": "#0f3460",
+        "base-content": "#ffffff",
+        "info": "#3abff8",
+        "info-content": "#002b3d",
+        "success": "#36d399", 
+        "success-content": "#003320",
+        "warning": "#fbbd23",
+        "warning-content": "#382800",
+        "error": "#f87272",
+        "error-content": "#470000",
+      }
+    }
+  ] --default;
 }
 
-/* Custom font family is preserved */
+/* Custom styling for a more attractive look */
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  min-height: 100vh;
+}
+
+/* Add subtle animations */
+.card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.1);
+}
+
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.3);
+  border-color: #ff6b9d;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(255, 107, 157, 0.3);
 }
