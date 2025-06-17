@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, RotateCcw, Upload, X, Download } from "lucide-react";
+import { Lock, RotateCcw, X, Download } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
@@ -10,7 +10,7 @@ function HomePage() {
   const [password, setPassword] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
   const [guesses, setGuesses] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -153,13 +153,9 @@ function HomePage() {
       <div className="card shadow-xl w-full max-w-2xl">
         <div className="card-body">
           {!gameStarted && (
-            <>
-              <div className="not-prose flex justify-center mb-4">
-                <Lock className="w-12 h-12 text-primary" />
-              </div>
-              
-              <h1 className="text-center mb-6">Interrogame</h1>
-            </>
+            <div className="not-prose flex justify-center mb-6">
+              <Lock className="w-12 h-12 text-primary" />
+            </div>
           )}
           
 
@@ -270,7 +266,6 @@ function PasswordGuessGame({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const correctGuesses = guesses.filter((_, index) => isCorrectGuess(index)).length;
-  const isComplete = correctGuesses === password.length;
   const imageClarity = password.length > 0 ? correctGuesses / password.length : 0;
 
   const handleDownloadImage = () => {
@@ -320,7 +315,7 @@ function PasswordGuessGame({
         }
       }
     }
-  }, [imagePreview, correctGuesses, renderSecureImage]); // Only depend on correctGuesses count, not imageClarity
+  }, [imagePreview, correctGuesses, imageClarity, renderSecureImage]); // Depend on correctGuesses count and imageClarity
 
   const handleInputChange = (index: number, value: string) => {
     onGuessChange(index, value);
@@ -344,6 +339,14 @@ function PasswordGuessGame({
     } else if (e.key === 'ArrowRight' && index < password.length - 1) {
       e.preventDefault();
       inputRefs.current[index + 1]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      // Move to first box
+      inputRefs.current[0]?.focus();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      // Move to last box
+      inputRefs.current[password.length - 1]?.focus();
     }
   };
 
@@ -366,13 +369,12 @@ function PasswordGuessGame({
                 userSelect: imageClarity < 1 ? 'none' : 'auto',
                 WebkitUserSelect: imageClarity < 1 ? 'none' : 'auto',
                 MozUserSelect: imageClarity < 1 ? 'none' : 'auto',
-                msUserSelect: imageClarity < 1 ? 'none' : 'auto',
+                msUserSelect: imageClarity < 1 ? 'none' : undefined,
                 pointerEvents: imageClarity < 1 ? 'none' : 'auto', // Enable interactions when fully revealed
                 cursor: imageClarity < 1 ? 'not-allowed' : 'auto'
               }}
-              onContextMenu={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow right-click when revealed
-              onDragStart={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow drag when revealed
-              onSelectStart={imageClarity < 1 ? (e) => e.preventDefault() : undefined} // Allow selection when revealed
+              onContextMenu={imageClarity < 1 ? (e: React.MouseEvent) => e.preventDefault() : undefined} // Allow right-click when revealed
+              onDragStart={imageClarity < 1 ? (e: React.DragEvent) => e.preventDefault() : undefined} // Allow drag when revealed
             />
           </div>
           
