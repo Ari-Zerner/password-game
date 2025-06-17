@@ -79,16 +79,20 @@ function HomePage() {
       // Draw the image
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
       
-      // Add noise overlay if not fully revealed
+      // Add deterministic noise overlay if not fully revealed
       if (clarity < 1) {
         ctx.filter = 'none';
         ctx.globalCompositeOperation = 'multiply';
         
-        // Create noise pattern
+        // Create deterministic noise pattern based on clarity level
         const noiseIntensity = 1 - clarity;
+        const seed = Math.floor(clarity * 100); // Use clarity as seed for deterministic pattern
+        
         for (let x = 0; x < canvasWidth; x += 4) {
           for (let y = 0; y < canvasHeight; y += 4) {
-            if (Math.random() < noiseIntensity * 0.3) {
+            // Deterministic pseudo-random based on position and seed
+            const pseudoRandom = ((x * 7 + y * 13 + seed * 17) % 100) / 100;
+            if (pseudoRandom < noiseIntensity * 0.3) {
               ctx.fillStyle = `rgba(0, 0, 0, ${noiseIntensity * 0.8})`;
               ctx.fillRect(x, y, 2, 2);
             }
@@ -289,7 +293,7 @@ function PasswordGuessGame({
     inputRefs.current = inputRefs.current.slice(0, password.length);
   }, [password.length]);
 
-  // Update canvas when image clarity changes
+  // Update canvas only when correct guess count changes (deterministic)
   useEffect(() => {
     if (imagePreview && canvasRef.current) {
       renderSecureImage(canvasRef.current, imagePreview, imageClarity);
@@ -317,7 +321,7 @@ function PasswordGuessGame({
         }
       }
     }
-  }, [imagePreview, imageClarity, renderSecureImage]);
+  }, [imagePreview, correctGuesses, renderSecureImage]); // Only depend on correctGuesses count, not imageClarity
 
   const handleInputChange = (index: number, value: string) => {
     onGuessChange(index, value);
