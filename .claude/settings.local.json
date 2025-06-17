@@ -1,7 +1,12 @@
 {
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "playwright",
     "shell-commands"
   ],
-  "enableAllProjectMcpServers": true
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_file_upload"
+    ]
+  }
 }

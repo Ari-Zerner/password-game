@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, RotateCcw } from "lucide-react";
+import { Lock, RotateCcw, Upload, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
@@ -10,6 +10,9 @@ function HomePage() {
   const [password, setPassword] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
   const [guesses, setGuesses] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartGame = () => {
     if (password.trim().length === 0) return;
@@ -21,6 +24,28 @@ function HomePage() {
     setPassword("");
     setGameStarted(false);
     setGuesses([]);
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleGuessChange = (index: number, value: string) => {
@@ -50,11 +75,13 @@ function HomePage() {
               <h3 className="font-semibold text-lg mb-2">How to Play:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>Enter any password you want others to guess</li>
+                <li>Optionally upload an image that will be revealed as the password is guessed</li>
                 <li>The password will be hidden and replaced with empty boxes</li>
                 <li>Guess each character one by one in the boxes</li>
                 <li>Correct guesses turn green, incorrect ones turn red</li>
+                <li>Each correct guess makes the image clearer (if uploaded)</li>
                 <li>Guessing is case-insensitive (A = a)</li>
-                <li>Complete all characters to win!</li>
+                <li>Complete all characters to win and fully reveal the image!</li>
               </ul>
             </div>
           </div>
@@ -74,6 +101,47 @@ function HomePage() {
                   onKeyDown={(e) => e.key === 'Enter' && handleStartGame()}
                 />
               </div>
+
+              {/* Image Upload Section */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-lg font-medium">Upload an image to reveal (optional):</span>
+                </label>
+                
+                {!imagePreview ? (
+                  <div className="not-prose">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="file-input file-input-bordered file-input-primary w-full"
+                    />
+                    <div className="mt-2 text-sm text-base-content/70">
+                      The image will start completely obscured and become clearer with each correct guess
+                    </div>
+                  </div>
+                ) : (
+                  <div className="not-prose">
+                    <div className="relative inline-block">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="max-w-xs max-h-48 rounded-lg border border-base-300"
+                      />
+                      <button
+                        onClick={handleRemoveImage}
+                        className="btn btn-sm btn-circle btn-error absolute -top-2 -right-2"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="mt-2 text-sm text-success">
+                      Image ready! This will be revealed as the password is guessed.
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <div className="not-prose">
                 <button 
@@ -92,6 +160,7 @@ function HomePage() {
               onGuessChange={handleGuessChange}
               isCorrectGuess={isCorrectGuess}
               onReset={handleReset}
+              imagePreview={imagePreview}
             />
           )}
         </div>
@@ -106,6 +175,7 @@ interface PasswordGuessGameProps {
   onGuessChange: (index: number, value: string) => void;
   isCorrectGuess: (index: number) => boolean;
   onReset: () => void;
+  imagePreview: string | null;
 }
 
 function PasswordGuessGame({ 
@@ -113,7 +183,8 @@ function PasswordGuessGame({
   guesses, 
   onGuessChange, 
   isCorrectGuess, 
-  onReset 
+  onReset,
+  imagePreview 
 }: PasswordGuessGameProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -140,8 +211,50 @@ function PasswordGuessGame({
   const correctGuesses = guesses.filter((_, index) => isCorrectGuess(index)).length;
   const isComplete = correctGuesses === password.length;
 
+  // Calculate image clarity based on correct guesses
+  const imageClarity = password.length > 0 ? correctGuesses / password.length : 0;
+
   return (
     <div className="space-y-8">
+      {/* Image reveal section */}
+      {imagePreview && (
+        <div className="text-center">
+          <div className="relative inline-block max-w-md">
+            <img 
+              src={imagePreview} 
+              alt="Hidden image" 
+              className="rounded-lg border border-base-300 max-h-64 w-auto"
+              style={{
+                filter: `
+                  blur(${Math.max(0, 20 - (imageClarity * 20))}px)
+                  brightness(${0.3 + (imageClarity * 0.7)})
+                  contrast(${0.5 + (imageClarity * 0.5)})
+                  saturate(${0.2 + (imageClarity * 0.8)})
+                  hue-rotate(${Math.max(0, 180 - (imageClarity * 180))}deg)
+                `,
+                transition: 'filter 0.5s ease-in-out'
+              }}
+            />
+            {/* Noise overlay for additional obscuring effect */}
+            <div 
+              className="absolute inset-0 rounded-lg pointer-events-none"
+              style={{
+                background: `
+                  radial-gradient(circle at 20% 50%, transparent 20%, rgba(0,0,0,${0.8 - (imageClarity * 0.8)}) 21%, rgba(0,0,0,${0.8 - (imageClarity * 0.8)}) 40%, transparent 41%),
+                  radial-gradient(circle at 80% 50%, transparent 20%, rgba(0,0,0,${0.6 - (imageClarity * 0.6)}) 21%, rgba(0,0,0,${0.6 - (imageClarity * 0.6)}) 40%, transparent 41%),
+                  radial-gradient(circle at 40% 40%, transparent 20%, rgba(0,0,0,${0.4 - (imageClarity * 0.4)}) 21%, rgba(0,0,0,${0.4 - (imageClarity * 0.4)}) 40%, transparent 41%),
+                  linear-gradient(90deg, transparent, rgba(0,0,0,${0.3 - (imageClarity * 0.3)}), transparent)
+                `,
+                transition: 'background 0.5s ease-in-out'
+              }}
+            />
+          </div>
+          <div className="mt-2 text-sm text-base-content/70">
+            Image clarity: {Math.round(imageClarity * 100)}%
+          </div>
+        </div>
+      )}
+
       <div className="text-center">
         <p className="text-lg mb-2">Guess the password character by character:</p>
         <div className="badge badge-primary badge-lg">
@@ -153,7 +266,9 @@ function PasswordGuessGame({
         {password.split('').map((_, index) => (
           <input
             key={index}
-            ref={(el) => (inputRefs.current[index] = el)}
+            ref={(el) => {
+              inputRefs.current[index] = el;
+            }}
             type="text"
             className={`input input-bordered w-12 h-12 text-center text-xl font-mono ${
               guesses[index] ? (isCorrectGuess(index) ? 'input-success bg-success/20' : 'input-error') : ''
@@ -169,7 +284,9 @@ function PasswordGuessGame({
       {isComplete && (
         <div className="not-prose text-center">
           <div className="alert alert-success">
-            <span className="text-lg font-semibold">🎉 Congratulations! You guessed the password!</span>
+            <span className="text-lg font-semibold">
+              🎉 Congratulations! You guessed the password{imagePreview ? ' and revealed the image' : ''}!
+            </span>
           </div>
         </div>
       )}
