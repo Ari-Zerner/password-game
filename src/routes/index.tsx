@@ -373,9 +373,6 @@ function PasswordGuessGame({
                 <Download className="w-4 h-4 mr-2" />
                 Download Image
               </button>
-              <div className="text-sm text-red-400 mt-2">
-                Target acquired. Right-click to extract or download.
-              </div>
             </div>
           )}
         </div>
