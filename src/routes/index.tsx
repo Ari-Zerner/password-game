@@ -14,6 +14,7 @@ function HomePage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleStartGame = () => {
     if (password.trim().length === 0) return;
@@ -21,13 +22,6 @@ function HomePage() {
     setGuesses(new Array(password.length).fill(""));
   };
 
-  const handleReset = () => {
-    setPassword("");
-    setGameStarted(false);
-    setGuesses([]);
-    setSelectedImage(null);
-    setImagePreview(null);
-  };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,11 +35,94 @@ function HomePage() {
     }
   };
 
+  // Secure canvas rendering function
+  const renderSecureImage = (canvas: HTMLCanvasElement, imageSrc: string, clarity: number) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // Set canvas size to match image aspect ratio
+      const maxWidth = 400;
+      const maxHeight = 300;
+      const aspectRatio = img.width / img.height;
+      
+      let canvasWidth = maxWidth;
+      let canvasHeight = maxWidth / aspectRatio;
+      
+      if (canvasHeight > maxHeight) {
+        canvasHeight = maxHeight;
+        canvasWidth = maxHeight * aspectRatio;
+      }
+      
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      
+      // Apply filters based on clarity
+      const blur = Math.max(0, 20 - (clarity * 20));
+      const brightness = 0.3 + (clarity * 0.7);
+      const contrast = 0.5 + (clarity * 0.5);
+      const saturate = 0.2 + (clarity * 0.8);
+      const hueRotate = Math.max(0, 180 - (clarity * 180));
+      
+      ctx.filter = `
+        blur(${blur}px) 
+        brightness(${brightness}) 
+        contrast(${contrast}) 
+        saturate(${saturate}) 
+        hue-rotate(${hueRotate}deg)
+      `;
+      
+      // Draw the image
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+      
+      // Add noise overlay if not fully revealed
+      if (clarity < 1) {
+        ctx.filter = 'none';
+        ctx.globalCompositeOperation = 'multiply';
+        
+        // Create noise pattern
+        const noiseIntensity = 1 - clarity;
+        for (let x = 0; x < canvasWidth; x += 4) {
+          for (let y = 0; y < canvasHeight; y += 4) {
+            if (Math.random() < noiseIntensity * 0.3) {
+              ctx.fillStyle = `rgba(0, 0, 0, ${noiseIntensity * 0.8})`;
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    };
+    
+    // Important: Set crossOrigin to prevent tainted canvas
+    img.crossOrigin = 'anonymous';
+    img.src = imageSrc;
+  };
+
   const handleRemoveImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleReset = () => {
+    setPassword("");
+    setGameStarted(false);
+    setGuesses([]);
+    setSelectedImage(null);
+    setImagePreview(null);
+    // Clear canvas when resetting
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
     }
   };
 
@@ -173,6 +250,7 @@ function HomePage() {
               isCorrectGuess={isCorrectGuess}
               onReset={handleReset}
               imagePreview={imagePreview}
+              renderSecureImage={renderSecureImage}
             />
           )}
         </div>
@@ -188,6 +266,7 @@ interface PasswordGuessGameProps {
   isCorrectGuess: (index: number) => boolean;
   onReset: () => void;
   imagePreview: string | null;
+  renderSecureImage: (canvas: HTMLCanvasElement, imageSrc: string, clarity: number) => void;
 }
 
 function PasswordGuessGame({ 
@@ -196,13 +275,49 @@ function PasswordGuessGame({
   onGuessChange, 
   isCorrectGuess, 
   onReset,
-  imagePreview 
+  imagePreview,
+  renderSecureImage 
 }: PasswordGuessGameProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  const correctGuesses = guesses.filter((_, index) => isCorrectGuess(index)).length;
+  const isComplete = correctGuesses === password.length;
+  const imageClarity = password.length > 0 ? correctGuesses / password.length : 0;
 
   useEffect(() => {
     inputRefs.current = inputRefs.current.slice(0, password.length);
   }, [password.length]);
+
+  // Update canvas when image clarity changes
+  useEffect(() => {
+    if (imagePreview && canvasRef.current) {
+      renderSecureImage(canvasRef.current, imagePreview, imageClarity);
+      
+      // Override toDataURL and toBlob methods until fully revealed
+      if (imageClarity < 1) {
+        const canvas = canvasRef.current;
+        const originalToDataURL = canvas.toDataURL.bind(canvas);
+        const originalToBlob = canvas.toBlob.bind(canvas);
+        
+        canvas.toDataURL = () => {
+          console.warn('Image access blocked until password is fully revealed');
+          return 'data:,'; // Empty data URL
+        };
+        
+        canvas.toBlob = (callback) => {
+          console.warn('Image access blocked until password is fully revealed');
+          if (callback) callback(null);
+        };
+        
+        // Restore original methods when fully revealed
+        if (imageClarity === 1) {
+          canvas.toDataURL = originalToDataURL;
+          canvas.toBlob = originalToBlob;
+        }
+      }
+    }
+  }, [imagePreview, imageClarity, renderSecureImage]);
 
   const handleInputChange = (index: number, value: string) => {
     onGuessChange(index, value);
@@ -220,11 +335,6 @@ function PasswordGuessGame({
     }
   };
 
-  const correctGuesses = guesses.filter((_, index) => isCorrectGuess(index)).length;
-  const isComplete = correctGuesses === password.length;
-
-  // Calculate image clarity based on correct guesses
-  const imageClarity = password.length > 0 ? correctGuesses / password.length : 0;
 
   return (
     <div className="space-y-8">
@@ -232,20 +342,23 @@ function PasswordGuessGame({
       {imagePreview && (
         <div className="text-center">
           <div className="relative inline-block max-w-md">
-            <img 
-              src={imagePreview} 
-              alt="Hidden image" 
-              className="rounded-lg border border-base-300 max-h-64 w-auto"
+            <canvas 
+              ref={canvasRef}
+              className="rounded-lg border border-base-300 max-h-64"
+              data-secure={imageClarity < 1 ? "true" : undefined}
               style={{
-                filter: `
-                  blur(${Math.max(0, 20 - (imageClarity * 20))}px)
-                  brightness(${0.3 + (imageClarity * 0.7)})
-                  contrast(${0.5 + (imageClarity * 0.5)})
-                  saturate(${0.2 + (imageClarity * 0.8)})
-                  hue-rotate(${Math.max(0, 180 - (imageClarity * 180))}deg)
-                `,
-                transition: 'filter 0.5s ease-in-out'
+                transition: 'opacity 0.5s ease-in-out',
+                maxWidth: '100%',
+                height: 'auto',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none',
+                pointerEvents: imageClarity < 1 ? 'none' : 'auto' // Disable interactions until fully revealed
               }}
+              onContextMenu={(e) => e.preventDefault()} // Prevent right-click save
+              onDragStart={(e) => e.preventDefault()} // Prevent drag and drop
+              onSelectStart={(e) => e.preventDefault()} // Prevent text selection
             />
           </div>
         </div>
