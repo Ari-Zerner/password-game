@@ -3,7 +3,9 @@
     "allow": [
       "mcp__playwright__browser_file_upload",
       "Bash(pnpx vercel:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm install:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
